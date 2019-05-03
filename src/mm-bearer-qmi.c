@@ -970,7 +970,11 @@ cleanup_event_report_unsolicited_events (MMBearerQmi *self,
 {
     QmiMessageWdsSetEventReportInput *input;
 
-    g_assert (*indication_id != 0);
+    if (*indication_id == 0) {
+        mm_warn ("Reporting of unsolicited events already cleared");
+        return;
+    }
+
     g_signal_handler_disconnect (client, *indication_id);
     *indication_id = 0;
 
