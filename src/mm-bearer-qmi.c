@@ -1047,6 +1047,19 @@ connect_context_step (ConnectContext *ctx)
                                          MM_CORE_ERROR,
                                          MM_CORE_ERROR_CANCELLED,
                                          "Connection setup operation has been cancelled");
+        if (ctx->data) {
+            ctx->self->priv->data = g_object_ref (ctx->data);
+            /* If we managed to succeed at connecting, we need to preserve the client
+             * and the handle, so that subsequent disconnection can destroy them. */
+            if (ctx->client_ipv4) {
+                ctx->self->priv->client_ipv4 = g_object_ref (ctx->client_ipv4);
+                ctx->self->priv->packet_data_handle_ipv4 = ctx->packet_data_handle_ipv4;
+            }
+            if (ctx->client_ipv6) {
+                ctx->self->priv->client_ipv6 = g_object_ref (ctx->client_ipv6);
+                ctx->self->priv->packet_data_handle_ipv6 = ctx->packet_data_handle_ipv6;
+            }
+        }
         connect_context_complete_and_free (ctx);
         return;
     }
