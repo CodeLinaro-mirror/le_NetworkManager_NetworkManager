@@ -425,19 +425,15 @@ typedef struct {
 
     gboolean ipv4;
     gboolean running_ipv4;
-    QmiClientWds *client_ipv4;
     guint packet_service_status_ipv4_indication_id;
     guint event_report_ipv4_indication_id;
-    guint32 packet_data_handle_ipv4;
     MMBearerIpConfig *ipv4_config;
     GError *error_ipv4;
 
     gboolean ipv6;
     gboolean running_ipv6;
-    QmiClientWds *client_ipv6;
     guint packet_service_status_ipv6_indication_id;
     guint event_report_ipv6_indication_id;
-    guint32 packet_data_handle_ipv6;
     MMBearerIpConfig *ipv6_config;
     GError *error_ipv6;
 } ConnectContext;
@@ -451,31 +447,29 @@ connect_context_free (ConnectContext *ctx)
 
     if (ctx->packet_service_status_ipv4_indication_id) {
         common_setup_cleanup_packet_service_status_unsolicited_events (ctx->self,
-                                                                       ctx->client_ipv4,
+                                                                       ctx->self->priv->client_ipv4,
                                                                        FALSE,
                                                                        &ctx->packet_service_status_ipv4_indication_id);
     }
     if (ctx->event_report_ipv4_indication_id) {
         cleanup_event_report_unsolicited_events (ctx->self,
-                                                 ctx->client_ipv4,
+                                                 ctx->self->priv->client_ipv4,
                                                  &ctx->event_report_ipv4_indication_id);
     }
     if (ctx->packet_service_status_ipv6_indication_id) {
         common_setup_cleanup_packet_service_status_unsolicited_events (ctx->self,
-                                                                       ctx->client_ipv6,
+                                                                       ctx->self->priv->client_ipv6,
                                                                        FALSE,
                                                                        &ctx->packet_service_status_ipv6_indication_id);
     }
     if (ctx->event_report_ipv6_indication_id) {
         cleanup_event_report_unsolicited_events (ctx->self,
-                                                 ctx->client_ipv6,
+                                                 ctx->self->priv->client_ipv6,
                                                  &ctx->event_report_ipv6_indication_id);
     }
 
     g_clear_error (&ctx->error_ipv4);
     g_clear_error (&ctx->error_ipv6);
-    g_clear_object (&ctx->client_ipv4);
-    g_clear_object (&ctx->client_ipv6);
     g_clear_object (&ctx->ipv4_config);
     g_clear_object (&ctx->ipv6_config);
     g_object_unref (ctx->data);
@@ -521,9 +515,9 @@ start_network_ready (QmiClientWds *client,
             g_error_free (error);
             error = NULL;
             if (ctx->running_ipv4)
-                ctx->packet_data_handle_ipv4 = GLOBAL_PACKET_DATA_HANDLE;
+                ctx->self->priv->packet_data_handle_ipv4 = GLOBAL_PACKET_DATA_HANDLE;
             else
-                ctx->packet_data_handle_ipv6 = GLOBAL_PACKET_DATA_HANDLE;
+                ctx->self->priv->packet_data_handle_ipv6 = GLOBAL_PACKET_DATA_HANDLE;
 
             /* Fall down to a successful connection */
         } else {
@@ -564,9 +558,9 @@ start_network_ready (QmiClientWds *client,
             ctx->error_ipv6 = error;
     } else {
         if (ctx->running_ipv4)
-            qmi_message_wds_start_network_output_get_packet_data_handle (output, &ctx->packet_data_handle_ipv4, NULL);
+            qmi_message_wds_start_network_output_get_packet_data_handle (output, &ctx->self->priv->packet_data_handle_ipv4, NULL);
         else
-            qmi_message_wds_start_network_output_get_packet_data_handle (output, &ctx->packet_data_handle_ipv6, NULL);
+            qmi_message_wds_start_network_output_get_packet_data_handle (output, &ctx->self->priv->packet_data_handle_ipv6, NULL);
     }
 
     if (output)
@@ -1172,13 +1166,13 @@ qmi_port_allocate_client_ready (MMPortQmi *qmi,
     }
 
     if (ctx->running_ipv4)
-        ctx->client_ipv4 = QMI_CLIENT_WDS (mm_port_qmi_get_client (qmi,
-                                                                   QMI_SERVICE_WDS,
-                                                                   MM_PORT_QMI_FLAG_WDS_IPV4));
+        ctx->self->priv->client_ipv4 = QMI_CLIENT_WDS (mm_port_qmi_get_client (qmi,
+                                                                               QMI_SERVICE_WDS,
+                                                                               MM_PORT_QMI_FLAG_WDS_IPV4));
     else
-        ctx->client_ipv6 = QMI_CLIENT_WDS (mm_port_qmi_get_client (qmi,
-                                                                   QMI_SERVICE_WDS,
-                                                                   MM_PORT_QMI_FLAG_WDS_IPV6));
+        ctx->self->priv->client_ipv6 = QMI_CLIENT_WDS (mm_port_qmi_get_client (qmi,
+                                                                               QMI_SERVICE_WDS,
+                                                                               MM_PORT_QMI_FLAG_WDS_IPV6));
 
     /* Keep on */
     ctx->step++;
@@ -1288,7 +1282,7 @@ connect_context_step (GTask *task)
             return;
         }
 
-        ctx->client_ipv4 = QMI_CLIENT_WDS (client);
+        ctx->self->priv->client_ipv4 = QMI_CLIENT_WDS (client);
         /* Just fall down */
         ctx->step++;
     }
@@ -1296,13 +1290,13 @@ connect_context_step (GTask *task)
     case CONNECT_STEP_IP_FAMILY_IPV4:
         /* If client is new enough, select IP family */
         if (!ctx->no_ip_family_preference &&
-            qmi_client_check_version (QMI_CLIENT (ctx->client_ipv4), 1, 9)) {
+            qmi_client_check_version (QMI_CLIENT (ctx->self->priv->client_ipv4), 1, 9)) {
             QmiMessageWdsSetIpFamilyInput *input;
 
             mm_dbg ("Setting default IP family to: IPv4");
             input = qmi_message_wds_set_ip_family_input_new ();
             qmi_message_wds_set_ip_family_input_set_preference (input, QMI_WDS_IP_FAMILY_IPV4, NULL);
-            qmi_client_wds_set_ip_family (ctx->client_ipv4,
+            qmi_client_wds_set_ip_family (ctx->self->priv->client_ipv4,
                                           input,
                                           10,
                                           cancellable,
@@ -1319,11 +1313,11 @@ connect_context_step (GTask *task)
 
     case CONNECT_STEP_ENABLE_INDICATIONS_IPV4:
         common_setup_cleanup_packet_service_status_unsolicited_events (ctx->self,
-                                                                       ctx->client_ipv4,
+                                                                       ctx->self->priv->client_ipv4,
                                                                        TRUE,
                                                                        &ctx->packet_service_status_ipv4_indication_id);
         setup_event_report_unsolicited_events (ctx->self,
-                                               ctx->client_ipv4,
+                                               ctx->self->priv->client_ipv4,
                                                cancellable,
                                                (GAsyncReadyCallback) connect_enable_indications_ipv4_ready,
                                                task);
@@ -1334,21 +1328,25 @@ connect_context_step (GTask *task)
 
         mm_dbg ("Starting IPv4 connection...");
         input = build_start_network_input (ctx);
-        qmi_client_wds_start_network (ctx->client_ipv4,
+
+
+        qmi_client_wds_start_network (ctx->self->priv->client_ipv4,
                                       input,
                                       45,
                                       NULL, /* Disallow cancellation */
                                       (GAsyncReadyCallback)start_network_ready,
                                       task);
+
+
         qmi_message_wds_start_network_input_unref (input);
         return;
     }
 
     case CONNECT_STEP_GET_CURRENT_SETTINGS_IPV4: {
         /* Retrieve and print IP configuration */
-        if (ctx->packet_data_handle_ipv4) {
+        if (ctx->self->priv->packet_data_handle_ipv4) {
             mm_dbg ("Getting IPv4 configuration...");
-            get_current_settings (task, ctx->client_ipv4);
+            get_current_settings (task, ctx->self->priv->client_ipv4);
             return;
         }
         /* Fall through */
@@ -1387,7 +1385,7 @@ connect_context_step (GTask *task)
             return;
         }
 
-        ctx->client_ipv6 = QMI_CLIENT_WDS (client);
+        ctx->self->priv->client_ipv6 = QMI_CLIENT_WDS (client);
         /* Just fall down */
         ctx->step++;
     }
@@ -1397,13 +1395,13 @@ connect_context_step (GTask *task)
         g_assert (ctx->no_ip_family_preference == FALSE);
 
         /* If client is new enough, select IP family */
-        if (qmi_client_check_version (QMI_CLIENT (ctx->client_ipv6), 1, 9)) {
+        if (qmi_client_check_version (QMI_CLIENT (ctx->self->priv->client_ipv6), 1, 9)) {
             QmiMessageWdsSetIpFamilyInput *input;
 
             mm_dbg ("Setting default IP family to: IPv6");
             input = qmi_message_wds_set_ip_family_input_new ();
             qmi_message_wds_set_ip_family_input_set_preference (input, QMI_WDS_IP_FAMILY_IPV6, NULL);
-            qmi_client_wds_set_ip_family (ctx->client_ipv6,
+            qmi_client_wds_set_ip_family (ctx->self->priv->client_ipv6,
                                           input,
                                           10,
                                           cancellable,
@@ -1420,11 +1418,11 @@ connect_context_step (GTask *task)
 
     case CONNECT_STEP_ENABLE_INDICATIONS_IPV6:
         common_setup_cleanup_packet_service_status_unsolicited_events (ctx->self,
-                                                                       ctx->client_ipv6,
+                                                                       ctx->self->priv->client_ipv6,
                                                                        TRUE,
                                                                        &ctx->packet_service_status_ipv6_indication_id);
         setup_event_report_unsolicited_events (ctx->self,
-                                               ctx->client_ipv6,
+                                               ctx->self->priv->client_ipv6,
                                                cancellable,
                                                (GAsyncReadyCallback) connect_enable_indications_ipv6_ready,
                                                task);
@@ -1435,7 +1433,7 @@ connect_context_step (GTask *task)
 
         mm_dbg ("Starting IPv6 connection...");
         input = build_start_network_input (ctx);
-        qmi_client_wds_start_network (ctx->client_ipv6,
+        qmi_client_wds_start_network (ctx->self->priv->client_ipv6,
                                       input,
                                       45,
                                       NULL, /* Disallow cancellation */
@@ -1447,9 +1445,9 @@ connect_context_step (GTask *task)
 
     case CONNECT_STEP_GET_CURRENT_SETTINGS_IPV6: {
         /* Retrieve and print IP configuration */
-        if (ctx->packet_data_handle_ipv6) {
+        if (ctx->self->priv->packet_data_handle_ipv6) {
             mm_dbg ("Getting IPv6 configuration...");
-            get_current_settings (task, ctx->client_ipv6);
+            get_current_settings (task, ctx->self->priv->client_ipv6);
             return;
         }
         /* Fall through */
@@ -1458,7 +1456,7 @@ connect_context_step (GTask *task)
 
     case CONNECT_STEP_LAST:
         /* If one of IPv4 or IPv6 succeeds, we're connected */
-        if (ctx->packet_data_handle_ipv4 || ctx->packet_data_handle_ipv6) {
+        if (ctx->self->priv->packet_data_handle_ipv4 || ctx->self->priv->packet_data_handle_ipv6) {
             /* Port is connected; update the state */
             mm_port_set_connected (MM_PORT (ctx->data), TRUE);
 
@@ -1466,26 +1464,18 @@ connect_context_step (GTask *task)
             g_assert (ctx->self->priv->data == NULL);
             ctx->self->priv->data = g_object_ref (ctx->data);
 
-            g_assert (ctx->self->priv->packet_data_handle_ipv4 == 0);
-            g_assert (ctx->self->priv->client_ipv4 == NULL);
-            if (ctx->packet_data_handle_ipv4) {
-                ctx->self->priv->packet_data_handle_ipv4 = ctx->packet_data_handle_ipv4;
+            if (ctx->self->priv->packet_data_handle_ipv4) {
                 ctx->self->priv->packet_service_status_ipv4_indication_id = ctx->packet_service_status_ipv4_indication_id;
                 ctx->packet_service_status_ipv4_indication_id = 0;
                 ctx->self->priv->event_report_ipv4_indication_id = ctx->event_report_ipv4_indication_id;
                 ctx->event_report_ipv4_indication_id = 0;
-                ctx->self->priv->client_ipv4 = g_object_ref (ctx->client_ipv4);
             }
 
-            g_assert (ctx->self->priv->packet_data_handle_ipv6 == 0);
-            g_assert (ctx->self->priv->client_ipv6 == NULL);
-            if (ctx->packet_data_handle_ipv6) {
-                ctx->self->priv->packet_data_handle_ipv6 = ctx->packet_data_handle_ipv6;
+            if (ctx->self->priv->packet_data_handle_ipv6) {
                 ctx->self->priv->packet_service_status_ipv6_indication_id = ctx->packet_service_status_ipv6_indication_id;
                 ctx->packet_service_status_ipv6_indication_id = 0;
                 ctx->self->priv->event_report_ipv6_indication_id = ctx->event_report_ipv6_indication_id;
                 ctx->event_report_ipv6_indication_id = 0;
-                ctx->self->priv->client_ipv6 = g_object_ref (ctx->client_ipv6);
             }
 
             /* Set operation result */
@@ -1705,13 +1695,9 @@ typedef struct {
     DisconnectStep step;
 
     gboolean running_ipv4;
-    QmiClientWds *client_ipv4;
-    guint32 packet_data_handle_ipv4;
     GError *error_ipv4;
 
     gboolean running_ipv6;
-    QmiClientWds *client_ipv6;
-    guint32 packet_data_handle_ipv6;
     GError *error_ipv6;
 } DisconnectContext;
 
@@ -1722,10 +1708,6 @@ disconnect_context_free (DisconnectContext *ctx)
         g_error_free (ctx->error_ipv4);
     if (ctx->error_ipv6)
         g_error_free (ctx->error_ipv6);
-    if (ctx->client_ipv4)
-        g_object_unref (ctx->client_ipv4);
-    if (ctx->client_ipv6)
-        g_object_unref (ctx->client_ipv6);
     g_slice_free (DisconnectContext, ctx);
 }
 
@@ -1754,7 +1736,6 @@ reset_bearer_connection (MMBearerQmi *self,
                                                          self->priv->client_ipv4,
                                                          &self->priv->event_report_ipv4_indication_id);
         }
-        self->priv->packet_data_handle_ipv4 = 0;
         g_clear_object (&self->priv->client_ipv4);
     }
 
@@ -1770,7 +1751,6 @@ reset_bearer_connection (MMBearerQmi *self,
                                                          self->priv->client_ipv6,
                                                          &self->priv->event_report_ipv6_indication_id);
         }
-        self->priv->packet_data_handle_ipv6 = 0;
         g_clear_object (&self->priv->client_ipv6);
     }
 
@@ -1846,23 +1826,24 @@ disconnect_context_step (GTask *task)
         ctx->step++;
 
     case DISCONNECT_STEP_STOP_NETWORK_IPV4:
-        if (ctx->packet_data_handle_ipv4) {
+        if (self->priv->packet_data_handle_ipv4) {
             QmiMessageWdsStopNetworkInput *input;
 
             common_setup_cleanup_packet_service_status_unsolicited_events (self,
-                                                                           ctx->client_ipv4,
+                                                                           self->priv->client_ipv4,
                                                                            FALSE,
                                                                            &self->priv->packet_service_status_ipv4_indication_id);
             cleanup_event_report_unsolicited_events (self,
-                                                     ctx->client_ipv4,
+                                                     self->priv->client_ipv4,
                                                      &self->priv->event_report_ipv4_indication_id);
 
             input = qmi_message_wds_stop_network_input_new ();
-            qmi_message_wds_stop_network_input_set_packet_data_handle (input, ctx->packet_data_handle_ipv4, NULL);
+            qmi_message_wds_stop_network_input_set_packet_data_handle (input, self->priv->packet_data_handle_ipv4, NULL);
+            self->priv->packet_data_handle_ipv4 = 0;
 
             ctx->running_ipv4 = TRUE;
             ctx->running_ipv6 = FALSE;
-            qmi_client_wds_stop_network (ctx->client_ipv4,
+            qmi_client_wds_stop_network (self->priv->client_ipv4,
                                          input,
                                          30,
                                          NULL,
@@ -1875,23 +1856,24 @@ disconnect_context_step (GTask *task)
         ctx->step++;
 
     case DISCONNECT_STEP_STOP_NETWORK_IPV6:
-        if (ctx->packet_data_handle_ipv6) {
+        if (self->priv->packet_data_handle_ipv6) {
             QmiMessageWdsStopNetworkInput *input;
 
             common_setup_cleanup_packet_service_status_unsolicited_events (self,
-                                                                           ctx->client_ipv6,
+                                                                           self->priv->client_ipv6,
                                                                            FALSE,
                                                                            &self->priv->packet_service_status_ipv6_indication_id);
             cleanup_event_report_unsolicited_events (self,
-                                                     ctx->client_ipv6,
+                                                     self->priv->client_ipv6,
                                                      &self->priv->event_report_ipv6_indication_id);
 
             input = qmi_message_wds_stop_network_input_new ();
-            qmi_message_wds_stop_network_input_set_packet_data_handle (input, ctx->packet_data_handle_ipv6, NULL);
+            qmi_message_wds_stop_network_input_set_packet_data_handle (input, self->priv->packet_data_handle_ipv6, NULL);
 
+            self->priv->packet_data_handle_ipv6 = 0;
             ctx->running_ipv4 = FALSE;
             ctx->running_ipv6 = TRUE;
-            qmi_client_wds_stop_network (ctx->client_ipv6,
+            qmi_client_wds_stop_network (self->priv->client_ipv6,
                                          input,
                                          30,
                                          NULL,
@@ -1935,25 +1917,7 @@ disconnect (MMBaseBearer *_self,
     DisconnectContext *ctx;
     GTask *task;
 
-    if ((!self->priv->packet_data_handle_ipv4 && !self->priv->packet_data_handle_ipv6) ||
-        (!self->priv->client_ipv4 && !self->priv->client_ipv6) ||
-        !self->priv->data) {
-        g_task_report_new_error (
-            self,
-            callback,
-            user_data,
-            disconnect,
-            MM_CORE_ERROR,
-            MM_CORE_ERROR_FAILED,
-            "Couldn't disconnect QMI bearer: this bearer is not connected");
-        return;
-    }
-
     ctx = g_slice_new0 (DisconnectContext);
-    ctx->client_ipv4 = self->priv->client_ipv4 ? g_object_ref (self->priv->client_ipv4) : NULL;
-    ctx->packet_data_handle_ipv4 = self->priv->packet_data_handle_ipv4;
-    ctx->client_ipv6 = self->priv->client_ipv6 ? g_object_ref (self->priv->client_ipv6) : NULL;
-    ctx->packet_data_handle_ipv6 = self->priv->packet_data_handle_ipv6;
     ctx->step = DISCONNECT_STEP_FIRST;
 
     task = g_task_new (self, NULL, callback, user_data);
