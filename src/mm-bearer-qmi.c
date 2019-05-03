@@ -1171,7 +1171,7 @@ connect_context_step (ConnectContext *ctx)
         qmi_client_wds_start_network (ctx->client_ipv4,
                                       input,
                                       45,
-                                      ctx->cancellable,
+                                      NULL, /* Disallow cancellation */
                                       (GAsyncReadyCallback)start_network_ready,
                                       ctx);
         qmi_message_wds_start_network_input_unref (input);
@@ -1274,7 +1274,7 @@ connect_context_step (ConnectContext *ctx)
         qmi_client_wds_start_network (ctx->client_ipv6,
                                       input,
                                       45,
-                                      ctx->cancellable,
+                                      NULL, /* Disallow cancellation */
                                       (GAsyncReadyCallback)start_network_ready,
                                       ctx);
         qmi_message_wds_start_network_input_unref (input);
