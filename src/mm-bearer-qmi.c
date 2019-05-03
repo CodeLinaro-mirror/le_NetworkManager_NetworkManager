@@ -1207,13 +1207,27 @@ connect_context_step (GTask *task)
     ConnectContext *ctx;
     GCancellable *cancellable;
 
+    ctx = g_task_get_task_data (task);
+
     /* If cancelled, complete */
     if (g_task_return_error_if_cancelled (task)) {
+        if (ctx->data) {
+            /* If we managed to succeed at connecting, we need to preserve the client
+             * and the handle, so that subsequent disconnection can destroy them. */
+            ctx->self->priv->data = g_object_ref (ctx->data);
+            if (ctx->client_ipv4) {
+                ctx->self->priv->client_ipv4 = g_object_ref (ctx->client_ipv4);
+                ctx->self->priv->packet_data_handle_ipv4 = ctx->packet_data_handle_ipv4;
+            }
+            if (ctx->client_ipv6) {
+                ctx->self->priv->client_ipv6 = g_object_ref (ctx->client_ipv6);
+                ctx->self->priv->packet_data_handle_ipv6 = ctx->packet_data_handle_ipv6;
+            }
+        }
         g_object_unref (task);
         return;
     }
 
-    ctx = g_task_get_task_data (task);
     cancellable = g_task_get_cancellable (task);
 
     switch (ctx->step) {
