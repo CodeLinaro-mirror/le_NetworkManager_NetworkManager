@@ -968,7 +968,17 @@ common_input_available (MMPortSerial *self,
 
         if (self->priv->response->len)
             g_byte_array_remove_range (self->priv->response, 0, self->priv->response->len);
-        port_serial_close_force (self);
+
+        /* Keep a reference while force-closing the port. It could otherwise be
+         * that some of the tasks that are cancelled during the closure hold the
+         * last reference and finalization would end up calling
+         * port_serial_close_force() recursively, caysing no end of mayhem. */
+        g_object_ref (self);
+        {
+            port_serial_close_force (self);
+        }
+        g_object_unref (self);
+
         return G_SOURCE_REMOVE;
     }
 
