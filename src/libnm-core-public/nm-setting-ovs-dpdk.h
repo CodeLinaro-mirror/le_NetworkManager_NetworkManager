@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_OVS_DPDK_SETTING_NAME "ovs-dpdk"
 
 #define NM_SETTING_OVS_DPDK_DEVARGS "devargs"
+#define NM_SETTING_OVS_DPDK_N_RXQ "n_rxq"
 
 typedef struct _NMSettingOvsDpdkClass NMSettingOvsDpdkClass;
 
@@ -37,7 +38,8 @@ NM_AVAILABLE_IN_1_20
 NMSetting *nm_setting_ovs_dpdk_new(void);
 
 NM_AVAILABLE_IN_1_20
-const char *nm_setting_ovs_dpdk_get_devargs(NMSettingOvsDpdk *self);
+const char * nm_setting_ovs_dpdk_get_devargs(NMSettingOvsDpdk *self);
+const char * nm_setting_ovs_dpdk_get_n_rxq(NMSettingOvsDpdk *self);
 
 G_END_DECLS
 
