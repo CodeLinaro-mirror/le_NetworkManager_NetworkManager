@@ -170,6 +170,8 @@ int nm_setting_connection_get_autoconnect_retries(NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_14
 NMConnectionMultiConnect nm_setting_connection_get_multi_connect(NMSettingConnection *setting);
 guint64                  nm_setting_connection_get_timestamp(NMSettingConnection *setting);
+
+NM_DEPRECATED_IN_1_44
 gboolean                 nm_setting_connection_get_read_only(NMSettingConnection *setting);
 
 guint32     nm_setting_connection_get_num_permissions(NMSettingConnection *setting);
