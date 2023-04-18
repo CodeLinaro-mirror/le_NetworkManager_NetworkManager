@@ -3396,8 +3396,8 @@ nm_utils_stable_id_parse(const char *stable_id,
      * At first, it looks a bit like bash parameter substitution.
      * In contrast however, the process is unambiguous so that the resulting
      * effective id differs if:
-     *  - the original, untranslated stable-id differs
-     *  - or any of the subsitutions differs.
+     *  - rule1: the original, untranslated stable-id differs
+     *  - rule2: or any of the substitution differs.
      *
      * The reason for that is, for example if you specify "${CONNECTION}" in the
      * stable-id, then the resulting ID should be always(!) unique for this connection.
@@ -3427,6 +3427,20 @@ nm_utils_stable_id_parse(const char *stable_id,
      * should give a different effective id.
      */
 
+    if (nm_streq(stable_id, "${UUID}")) {
+        /* If "${UUID}" is combined with any other string (for example,
+         * "foo${UUID}") it behaves similar to "${CONNECTION}" (but does not
+         * yield identical result due to rule1 above).
+         *
+         * In this case, we have a plain "${UUID}". In that case, it behaves
+         * identical to NULL (having stable-id unset). This mode exists as an
+         * explicit value, so that you can configure
+         * "connection.stable-id=${UUID}" as global connection default and get
+         * identical results as if the per-profile value is unspecified. */
+        *out_generated = NULL;
+        return NM_UTILS_STABLE_TYPE_UUID;
+    }
+
     idx_start = 0;
     for (i = 0; stable_id[i];) {
         if (stable_id[i] != '$') {
@@ -3448,7 +3462,7 @@ nm_utils_stable_id_parse(const char *stable_id,
         }                                                                     \
         _match;                                                               \
     })
-        if (CHECK_PREFIX("${CONNECTION}"))
+        if (CHECK_PREFIX("${CONNECTION}") || CHECK_PREFIX("${UUID}"))
             _stable_id_append(str, uuid);
         else if (CHECK_PREFIX("${BOOT}"))
             _stable_id_append(str, bootid);

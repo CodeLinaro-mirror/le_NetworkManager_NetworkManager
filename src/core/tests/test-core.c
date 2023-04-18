@@ -694,7 +694,7 @@ test_connection_match_wired(void)
                  NM_SETTING_WIRED_PORT,
                  "tp", /* port is not compared */
                  NM_SETTING_WIRED_MAC_ADDRESS,
-                 mac, /* we allow MAC address just in one connection */
+                 mac,  /* we allow MAC address just in one connection */
                  NM_SETTING_WIRED_S390_SUBCHANNELS,
                  subchan_arr,
                  NM_SETTING_WIRED_S390_NETTYPE,
@@ -733,7 +733,7 @@ test_connection_match_wired2(void)
                  NM_SETTING_WIRED_PORT,
                  "tp", /* port is not compared */
                  NM_SETTING_WIRED_MAC_ADDRESS,
-                 mac, /* we allow MAC address just in one connection */
+                 mac,  /* we allow MAC address just in one connection */
                  NULL);
 
     copy        = nm_simple_connection_new_clone(orig);
@@ -2109,7 +2109,7 @@ do_test_stable_id_parse(const char       *stable_id,
         g_assert(!expected_generated);
 
     if (expected_stable_type == NM_UTILS_STABLE_TYPE_UUID)
-        g_assert(!stable_id);
+        g_assert(NM_IN_STRSET(stable_id, NULL, "${UUID}"));
     else
         g_assert(stable_id);
 
@@ -2137,6 +2137,7 @@ test_stable_id_parse(void)
 #define _parse_random(stable_id) \
     do_test_stable_id_parse("" stable_id "", NM_UTILS_STABLE_TYPE_RANDOM, NULL)
     do_test_stable_id_parse(NULL, NM_UTILS_STABLE_TYPE_UUID, NULL);
+    do_test_stable_id_parse("${UUID}", NM_UTILS_STABLE_TYPE_UUID, NULL);
     _parse_stable_id("");
     _parse_stable_id("a");
     _parse_stable_id("a$");
@@ -2154,9 +2155,17 @@ test_stable_id_parse(void)
     _parse_generated("${${CONNECTION}", "${${CONNECTION}=11{_CONNECTION}");
     _parse_generated("${CONNECTION}x", "${CONNECTION}=11{_CONNECTION}x");
     _parse_generated("x${CONNECTION}", "x${CONNECTION}=11{_CONNECTION}");
+    _parse_stable_id("a$${UUID}");
+    _parse_stable_id("a$${UUID}x");
+    _parse_generated("${${UUID}", "${${UUID}=11{_CONNECTION}");
+    _parse_generated("${UUID}x", "${UUID}=11{_CONNECTION}x");
+    _parse_generated("x${UUID}", "x${UUID}=11{_CONNECTION}");
     _parse_generated("${BOOT}x", "${BOOT}=5{_BOOT}x");
     _parse_generated("x${BOOT}", "x${BOOT}=5{_BOOT}");
     _parse_generated("x${BOOT}${CONNECTION}", "x${BOOT}=5{_BOOT}${CONNECTION}=11{_CONNECTION}");
+    _parse_generated("x${BOOT}${UUID}", "x${BOOT}=5{_BOOT}${UUID}=11{_CONNECTION}");
+    _parse_generated("x${BOOT}${CONNECTION}${UUID}",
+                     "x${BOOT}=5{_BOOT}${CONNECTION}=11{_CONNECTION}${UUID}=11{_CONNECTION}");
     _parse_generated("xX${BOOT}yY${CONNECTION}zZ",
                      "xX${BOOT}=5{_BOOT}yY${CONNECTION}=11{_CONNECTION}zZ");
     _parse_generated("${MAC}x", "${MAC}=4{_MAC}x");

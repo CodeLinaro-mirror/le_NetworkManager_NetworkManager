@@ -8,6 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Support new placeholder "%{UUID}" for "connection.stable-id, to
+  explicitly configure the built-in default.
+
 =============================================
 NetworkManager-1.42
 Overview of changes since NetworkManager-1.40

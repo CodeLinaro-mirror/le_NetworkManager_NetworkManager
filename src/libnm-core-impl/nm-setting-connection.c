@@ -1913,11 +1913,12 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * The per-host key is the identity of your machine and stored in /var/lib/NetworkManager/secret_key.
      * See NetworkManager(8) manual about the secret-key and the host identity.
      *
-     * The '$' character is treated special to perform dynamic substitutions
-     * at runtime. Currently, supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
-     * "${BOOT}", "${RANDOM}".
+     * The '$' character is treated special to perform dynamic substitutions at
+     * runtime. Currently, supported are "${CONNECTION}", "${UUID}",
+     * "${DEVICE}", "${MAC}", "${BOOT}", "${RANDOM}".
      * These effectively create unique IDs per-connection, per-device, per-boot,
-     * or every time. Note that "${DEVICE}" corresponds to the interface name of the
+     * or every time. The placeholders "${CONNECTION}" and "${UUID}" use the profile's
+     * "connection.uuid". Note that "${DEVICE}" corresponds to the interface name of the
      * device and "${MAC}" is the permanent MAC address of the device.
      * Any unrecognized patterns following '$' are treated verbatim, however
      * are reserved for future use. You are thus advised to avoid '$' or
@@ -1927,8 +1928,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * interface where the profile activates.
      *
      * If the value is unset, a global connection default is consulted. If the
-     * value is still unset, the default is similar to "${CONNECTION}" and uses
-     * a unique, fixed ID for the connection.
+     * value is still unset, the default value is "${UUID}".
      *
      * Since: 1.4
      **/
