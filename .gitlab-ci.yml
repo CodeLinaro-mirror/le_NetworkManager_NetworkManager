@@ -14,7 +14,7 @@
 
 
 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
-.templates_sha: &template_sha 184ca628f89f3193c249b4e34e45afee2773a833
+.templates_sha: &template_sha 43156194381eae95b2876a3eaeaba90190774687
 
 
 
@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-d53edbf2ebdd'
-  CENTOS_TAG:  'tag-c374af7add25'
-  DEBIAN_TAG:  'tag-340ef1f25d8d'
-  FEDORA_TAG:  'tag-c374af7add25'
-  UBUNTU_TAG:  'tag-340ef1f25d8d'
+  ALPINE_TAG:  'tag-c9e5d23e70ba'
+  CENTOS_TAG:  'tag-f941a5d7ac5d'
+  DEBIAN_TAG:  'tag-53e25936bf6d'
+  FEDORA_TAG:  'tag-f941a5d7ac5d'
+  UBUNTU_TAG:  'tag-53e25936bf6d'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'

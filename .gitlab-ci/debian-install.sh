@@ -8,6 +8,12 @@ grep -q '^VERSION=.\(9 (stretch)\)' /etc/os-release && IS_DEBIAN_9=1
 grep -q '^VERSION=.\(18.04.[0-9]\+ LTS\)' /etc/os-release && IS_UBUNTU_18_04=1
 
 if [ $IS_DEBIAN_9 = 1 ]; then
+    # ci-templates also patches the container for us since [1].  The code is
+    # still here, so that you can run a container on your machine and
+    # debian-install.sh properly prepares it. It's redundant when called from
+    # in the gitlab-ci pipeline.
+    #
+    # [1] https://gitlab.freedesktop.org/freedesktop/ci-templates/-/merge_requests/179
     cat > /etc/apt/sources.list <<EOF
 deb http://archive.debian.org/debian/ stretch main non-free contrib
 deb-src http://archive.debian.org/debian/ stretch main non-free contrib
