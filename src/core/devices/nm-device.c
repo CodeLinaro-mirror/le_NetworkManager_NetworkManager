@@ -9747,6 +9747,20 @@ activate_stage1_device_prepare(NMDevice *self)
     if (master) {
         if (nm_active_connection_get_state(master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
             _LOGD(LOGD_DEVICE, "master connection is deactivating");
+            if (nm_active_connection_get_state(master) == NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+                NMDevice     *master_device = nm_active_connection_get_device(master);
+                NMActRequest *act_request =
+                    NM_DEVICE_GET_PRIVATE(master_device)->queued_act_request;
+                NMDeviceStateReason master_state_reason =
+                    NM_DEVICE_GET_PRIVATE(master_device)->state_reason;
+
+                if (act_request && master_state_reason == NM_DEVICE_STATE_REASON_NEW_ACTIVATION) {
+                    nm_device_state_changed(self,
+                                            NM_DEVICE_STATE_FAILED,
+                                            NM_DEVICE_STATE_REASON_NONE);
+                    return;
+                }
+            }
             nm_device_state_changed(self,
                                     NM_DEVICE_STATE_FAILED,
                                     NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
