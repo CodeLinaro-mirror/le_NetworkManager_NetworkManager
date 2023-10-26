@@ -882,10 +882,9 @@ nm_setting_connection_add_secondary(NMSettingConnection *setting, const char *se
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
-    if (nm_strvarray_find_first(priv->secondaries.arr, sec_uuid) >= 0)
+    if (!nm_strvarray_ensure_and_add_nodup(&priv->secondaries.arr, sec_uuid))
         return FALSE;
 
-    nm_strvarray_add(nm_strvarray_ensure(&priv->secondaries.arr), sec_uuid);
     _notify(setting, PROP_SECONDARIES);
     return TRUE;
 }
@@ -931,11 +930,11 @@ nm_setting_connection_remove_secondary_by_value(NMSettingConnection *setting, co
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
-    if (nm_strvarray_remove_first(priv->secondaries.arr, sec_uuid)) {
-        _notify(setting, PROP_SECONDARIES);
-        return TRUE;
-    }
-    return FALSE;
+    if (!nm_strvarray_remove_first(priv->secondaries.arr, sec_uuid))
+        return FALSE;
+
+    _notify(setting, PROP_SECONDARIES);
+    return TRUE;
 }
 
 /**
