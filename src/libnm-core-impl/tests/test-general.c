@@ -557,6 +557,21 @@ test_nm_hash(void)
 #endif
 
     NM_STATIC_ASSERT_EXPR_VOID(NM_HASH_COMBINE_BOOLS(int, 1, 0, 1) == 5);
+
+    g_assert_cmpmem(NM_HASH_SEED_16(55, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+                    16,
+                    ((guint8[16]){55, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}),
+                    16);
+
+    g_assert_cmpmem(NM_HASH_SEED_16_U64(1), 16, ((guint8[16]){0, 0, 0, 0, 0, 0, 0, 1, 0}), 16);
+    g_assert_cmpmem(NM_HASH_SEED_16_U64(0x1234567890ABCDEFu),
+                    16,
+                    ((guint8[16]){0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF, 0}),
+                    16);
+
+    g_assert_cmpint(c_siphash_hash(NM_HASH_SEED_16_U64(0x780E21E45489CC6Fu), (guint8 *) "foo", 3),
+                    ==,
+                    0XA5A41E5C1B4153BFu);
 }
 
 /*****************************************************************************/
@@ -5803,7 +5818,7 @@ test_connection_normalize_virtual_iface_name(void)
 static void
 _test_connection_normalize_type_normalizable_setting(
     const char *type,
-    void (*prepare_normalizable_fcn)(NMConnection *con))
+    void        (*prepare_normalizable_fcn)(NMConnection *con))
 {
     NMSettingConnection          *s_con;
     NMSetting                    *s_base;
@@ -5864,7 +5879,7 @@ _test_connection_normalize_type_unnormalizable_setting(const char *type)
 
 static void
 _test_connection_normalize_type_normalizable_type(const char *type,
-                                                  NMSetting *(*add_setting_fcn)(NMConnection *con))
+                                                  NMSetting  *(*add_setting_fcn)(NMConnection *con))
 {
     NMSettingConnection          *s_con;
     NMSetting                    *s_base;
@@ -6100,8 +6115,8 @@ test_connection_normalize_type(void)
     struct {
         const char *type;
         gboolean    normalizable;
-        NMSetting *(*add_setting_fcn)(NMConnection *con);
-        void (*prepare_normalizable_fcn)(NMConnection *con);
+        NMSetting  *(*add_setting_fcn)(NMConnection *con);
+        void        (*prepare_normalizable_fcn)(NMConnection *con);
     } types[] = {
         {NM_SETTING_GENERIC_SETTING_NAME, TRUE},
         {NM_SETTING_GSM_SETTING_NAME, TRUE},
