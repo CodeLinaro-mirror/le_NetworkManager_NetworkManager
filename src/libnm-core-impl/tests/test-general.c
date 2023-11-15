@@ -5371,7 +5371,8 @@ test_setting_ip4_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_add_dns_option(s_ip4, "debug"));
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns_option(s_ip4, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns_options->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && idx < nm_g_array_len(priv->dns_options.arr)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns_option(s_ip4, 1));
     g_test_assert_expected_messages();
 
@@ -8818,24 +8819,23 @@ test_nm_utils_dns_option_validate(void)
 static void
 test_nm_utils_dns_option_find_idx(void)
 {
-    GPtrArray *options;
+    const char *const options[] = {
+        "debug",
+        "timeout:5",
+        "edns0",
+    };
 
-    options = g_ptr_array_new();
+#define _find_idx(options, option) \
+    _nm_utils_dns_option_find_idx((options), G_N_ELEMENTS(options), ("" option ""))
 
-    g_ptr_array_add(options, "debug");
-    g_ptr_array_add(options, "timeout:5");
-    g_ptr_array_add(options, "edns0");
-
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "debug"), ==, 0);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "debug:1"), ==, 0);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "timeout"), ==, 1);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "timeout:5"), ==, 1);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "timeout:2"), ==, 1);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "edns0"), ==, 2);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, "rotate"), ==, -1);
-    g_assert_cmpint(_nm_utils_dns_option_find_idx(options, ""), ==, -1);
-
-    g_ptr_array_free(options, TRUE);
+    g_assert_cmpint(_find_idx(options, "debug"), ==, 0);
+    g_assert_cmpint(_find_idx(options, "debug:1"), ==, 0);
+    g_assert_cmpint(_find_idx(options, "timeout"), ==, 1);
+    g_assert_cmpint(_find_idx(options, "timeout:5"), ==, 1);
+    g_assert_cmpint(_find_idx(options, "timeout:2"), ==, 1);
+    g_assert_cmpint(_find_idx(options, "edns0"), ==, 2);
+    g_assert_cmpint(_find_idx(options, "rotate"), ==, -1);
+    g_assert_cmpint(_find_idx(options, ""), ==, -1);
 }
 
 /*****************************************************************************/
