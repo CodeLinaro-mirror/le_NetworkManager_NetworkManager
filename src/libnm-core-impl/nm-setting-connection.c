@@ -1940,8 +1940,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .from_dbus_is_full                = TRUE,
                                        .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
-        id,
-        .direct_string_allow_empty = TRUE);
+        id);
 
     /**
      * NMSettingConnection:uuid:
@@ -1984,8 +1983,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               PROP_UUID,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingConnectionPrivate,
-                                              uuid,
-                                              .direct_string_allow_empty = TRUE);
+                                              uuid);
 
     /**
      * NMSettingConnection:stable-id:
