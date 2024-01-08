@@ -1940,7 +1940,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .from_dbus_is_full                = TRUE,
                                        .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
-        id);
+        id,
+        .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:uuid:
@@ -1983,7 +1984,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               PROP_UUID,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingConnectionPrivate,
-                                              uuid);
+                                              uuid,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:stable-id:
@@ -2041,7 +2043,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               PROP_STABLE_ID,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingConnectionPrivate,
-                                              stable_id);
+                                              stable_id,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:interface-name:
@@ -2082,7 +2085,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .from_dbus_is_full                = TRUE,
                                        .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
-        interface_name);
+        interface_name,
+        .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:type:
@@ -2109,7 +2113,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingConnectionPrivate,
                                               type,
-                                              .direct_string_is_refstr = TRUE);
+                                              .direct_string_is_refstr   = TRUE,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:permissions:
@@ -2341,7 +2346,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               NM_SETTING_PARAM_FUZZY_IGNORE
                                                   | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY,
                                               NMSettingConnectionPrivate,
-                                              zone);
+                                              zone,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:master:
@@ -2372,7 +2378,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .from_dbus_fcn = _nm_setting_connection_master_from_dbus, ),
         NMSettingConnectionPrivate,
         controller,
-        .is_deprecated = 1);
+        .direct_string_allow_empty = TRUE,
+        .is_deprecated             = TRUE);
 
     /**
      * NMSettingConnection:controller:
@@ -2393,7 +2400,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                            _nm_setting_connection_controller_from_dbus),
         NMSettingConnectionPrivate,
         controller,
-        .direct_also_notify = obj_properties[PROP_MASTER]);
+        .direct_string_allow_empty = TRUE,
+        .direct_also_notify        = obj_properties[PROP_MASTER]);
 
     nm_g_array_index(properties_override, NMSettInfoProperty, prop_idx).direct_also_notify =
         obj_properties[PROP_CONTROLLER];
@@ -2422,7 +2430,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               NM_SETTING_PARAM_FUZZY_IGNORE
                                                   | NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingConnectionPrivate,
-                                              slave_type);
+                                              slave_type,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:autoconnect-slaves:
@@ -2869,7 +2878,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               PROP_MUD_URL,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingConnectionPrivate,
-                                              mud_url);
+                                              mud_url,
+                                              .direct_string_allow_empty = TRUE);
 
     /**
      * NMSettingConnection:wait-activation-delay:
