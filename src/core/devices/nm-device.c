@@ -18662,9 +18662,12 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Capabilities",
                                                            "u",
                                                            NM_DEVICE_CAPABILITIES),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Ip4Address",
-                                                           "u",
-                                                           NM_DEVICE_IP4_ADDRESS),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Ip4Address",
+                "u",
+                NM_DEVICE_IP4_ADDRESS,
+                .annotations =
+                    NM_DEFINE_DBUS_ANNOTATION_INFOS(NM_DEFINE_DBUS_ANNOTATION_INFO_DEPRECATED())),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("State", "u", NM_DEVICE_STATE),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("StateReason",
                                                            "(uu)",

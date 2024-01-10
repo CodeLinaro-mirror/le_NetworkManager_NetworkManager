@@ -167,12 +167,17 @@ nm_device_generic_new(const NMPlatformLink *plink, gboolean nm_plugin_missing)
 static const NMDBusInterfaceInfoExtended interface_info_device_generic = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DEVICE_GENERIC,
-        .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress", "s", NM_DEVICE_HW_ADDRESS),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
-                "TypeDescription",
-                "s",
-                NM_DEVICE_GENERIC_TYPE_DESCRIPTION), ), ),
+        .properties =
+            NM_DEFINE_GDBUS_PROPERTY_INFOS(NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                                               "HwAddress",
+                                               "s",
+                                               NM_DEVICE_HW_ADDRESS,
+                                               .annotations = NM_DEFINE_DBUS_ANNOTATION_INFOS(
+                                                   NM_DEFINE_DBUS_ANNOTATION_INFO_DEPRECATED())),
+                                           NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                                               "TypeDescription",
+                                               "s",
+                                               NM_DEVICE_GENERIC_TYPE_DESCRIPTION), ), ),
 };
 
 static void

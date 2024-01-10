@@ -1605,9 +1605,12 @@ static const NMDBusInterfaceInfoExtended interface_info_active_connection = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Controller",
                                                            "o",
                                                            NM_ACTIVE_CONNECTION_CONTROLLER),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Master",
-                                                           "o",
-                                                           NM_ACTIVE_CONNECTION_MASTER), ), ),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "Master",
+                "o",
+                NM_ACTIVE_CONNECTION_MASTER,
+                .annotations = NM_DEFINE_DBUS_ANNOTATION_INFOS(
+                    NM_DEFINE_DBUS_ANNOTATION_INFO_DEPRECATED()), ), ), ),
 };
 
 static void
