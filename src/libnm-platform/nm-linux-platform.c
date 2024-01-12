@@ -10729,7 +10729,7 @@ after_read:
               timeout_msec);
 
         memset(&pfd, 0, sizeof(pfd));
-        pfd.fd     = nl_socket_get_fd(priv->sk_rtnl);
+        pfd.fd     = nl_socket_get_fd(priv->sk_x[netlink_protocol]);
         pfd.events = POLLIN;
         r          = poll(&pfd, 1, timeout_msec);
 
