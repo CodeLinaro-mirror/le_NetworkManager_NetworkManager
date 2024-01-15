@@ -163,11 +163,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     g_assert(method);
 
     if (!strcmp(method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-        if (nm_setting_ip_config_get_num_addresses(s_ip) == 0) {
+        if (nm_setting_ip_config_get_num_addresses(s_ip) == 0
+            && nm_setting_ip_config_get_num_routes(s_ip) == 0) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                        _("this property cannot be empty for '%s=%s'"),
+                        _("the address and route cannot be empty for '%s=%s'"),
                         NM_SETTING_IP_CONFIG_METHOD,
                         method);
             g_prefix_error(error,

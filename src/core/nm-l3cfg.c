@@ -1312,25 +1312,27 @@ _commit_collect_routes(NML3Cfg          *self,
         goto loop_done;
 
     c_list_for_each_entry (entry, &head_entry->lst_entries_head, lst_entries) {
-        const NMPObject *obj = entry->obj;
-        GPtrArray      **r;
+        NMConnectionConfigMethod method;
+        const NMPObject         *obj = entry->obj;
+        GPtrArray              **r;
 
         if (_obj_is_route_nodev(obj))
             r = routes_nodev;
         else {
             nm_assert(NMP_OBJECT_CAST_IP_ROUTE(obj)->ifindex == self->priv.ifindex);
-
-            if (!any_addrs) {
+            method = nm_l3_config_data_get_connection_method(self->priv.p->combined_l3cd_commited);
+            if (!any_addrs && method != NM_CONNECTION_CONFIG_METHOD_MANUAL) {
                 /* This is a unicast route (or a similar route, which has an
                  * ifindex).
                  *
                  * However, during this commit we don't plan to configure any
-                 * IP addresses.  With `ipvx.method=manual` that should not be
-                 * possible. More likely, this is because the profile has
+                 * IP addresses. It is likely the profile has
                  * `ipvx.method=auto` and static routes.
                  *
                  * Don't configure any such routes before we also have at least
-                 * one IP address.
+                 * one IP address except for `ipvx.method=manual` where static
+                 * routes are allowed to configure even if the connection has
+                 * no addresses
                  *
                  * This code applies to IPv4 and IPv6, however for IPv6 we
                  * early on configure a link local address, so in practice the
