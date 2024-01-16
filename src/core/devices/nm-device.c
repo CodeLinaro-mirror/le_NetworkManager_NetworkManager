@@ -139,6 +139,7 @@ typedef struct {
     gpointer                callback_data;
     guint                   num_vfs;
     NMOptionBool            autoprobe;
+    NMSriovEswitchMode      eswitch_mode;
 } SriovOp;
 
 typedef enum {
@@ -7662,6 +7663,7 @@ sriov_op_start(NMDevice *self, SriovOp *op)
                                             priv->ifindex,
                                             op->num_vfs,
                                             op->autoprobe,
+                                            (_NMSriovEswitchMode) op->eswitch_mode,
                                             sriov_op_cb,
                                             op,
                                             op->cancellable);
@@ -7725,6 +7727,7 @@ static void
 sriov_op_queue(NMDevice               *self,
                guint                   num_vfs,
                NMOptionBool            autoprobe,
+               NMSriovEswitchMode      eswitch_mode,
                NMPlatformAsyncCallback callback,
                gpointer                callback_data)
 {
@@ -7753,6 +7756,7 @@ sriov_op_queue(NMDevice               *self,
     *op = (SriovOp){
         .num_vfs       = num_vfs,
         .autoprobe     = autoprobe,
+        .eswitch_mode  = eswitch_mode,
         .callback      = callback,
         .callback_data = callback_data,
     };
@@ -7777,7 +7781,12 @@ device_init_static_sriov_num_vfs(NMDevice *self)
             -1,
             -1);
         if (num_vfs >= 0)
-            sriov_op_queue(self, num_vfs, NM_OPTION_BOOL_DEFAULT, NULL, NULL);
+            sriov_op_queue(self,
+                           num_vfs,
+                           NM_OPTION_BOOL_DEFAULT,
+                           NM_SRIOV_ESWITCH_MODE_PRESERVE,
+                           NULL,
+                           NULL);
     }
 }
 
@@ -9958,6 +9967,7 @@ activate_stage1_device_prepare(NMDevice *self)
             sriov_op_queue(self,
                            nm_setting_sriov_get_total_vfs(s_sriov),
                            NM_TERNARY_TO_OPTION_BOOL(autoprobe),
+                           nm_setting_sriov_get_eswitch_mode(s_sriov),
                            sriov_params_cb,
                            nm_utils_user_data_pack(self, g_steal_pointer(&plat_vfs)));
             priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_PENDING;
@@ -16659,6 +16669,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 sriov_op_queue(self,
                                0,
                                NM_OPTION_BOOL_TRUE,
+                               NM_SRIOV_ESWITCH_MODE_PRESERVE,
                                sriov_reset_on_deactivate_cb,
                                nm_utils_user_data_pack(self, GINT_TO_POINTER(reason)));
             }
@@ -16708,7 +16719,12 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         if (priv->ifindex > 0
             && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))) {
             priv->sriov_reset_pending++;
-            sriov_op_queue(self, 0, NM_OPTION_BOOL_TRUE, sriov_reset_on_failure_cb, self);
+            sriov_op_queue(self,
+                           0,
+                           NM_OPTION_BOOL_TRUE,
+                           NM_SRIOV_ESWITCH_MODE_PRESERVE,
+                           sriov_reset_on_failure_cb,
+                           self);
             break;
         }
         /* Schedule the transition to DISCONNECTED.  The device can't transition
