@@ -145,6 +145,8 @@ struct _NML3ConfigData {
 
     NMTernary proxy_browser_only : 3;
 
+    NMConnectionConfigMethod connection_method : 4;
+
     NMProxyConfigMethod proxy_method : 4;
 
     NMSettingIP6ConfigPrivacy ip6_privacy : 4;
@@ -1933,6 +1935,30 @@ nm_l3_config_data_set_mptcp_flags(NML3ConfigData *self, NMMptcpFlags mptcp_flags
     return TRUE;
 }
 
+NMConnectionConfigMethod
+nm_l3_config_data_get_connection_method(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->connection_method;
+}
+
+gboolean
+nm_l3_config_data_set_connection_method(NML3ConfigData *self, NMConnectionConfigMethod value)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(NM_IN_SET(value,
+                        NM_CONNECTION_CONFIG_METHOD_NONE,
+                        NM_CONNECTION_CONFIG_METHOD_AUTO,
+                        NM_CONNECTION_CONFIG_METHOD_MANUAL));
+
+    if (self->connection_method == value)
+        return FALSE;
+
+    self->connection_method = value;
+    return TRUE;
+}
+
 NMProxyConfigMethod
 nm_l3_config_data_get_proxy_method(const NML3ConfigData *self)
 {
@@ -2722,6 +2748,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
     guint              nnameservers;
     guint              nsearches;
     const char        *gateway_str;
+    const char        *method;
     NMIPAddr           gateway_bin;
     guint              i;
     int                idx;
@@ -2738,6 +2765,26 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         return;
 
     never_default = nm_setting_ip_config_get_never_default(s_ip);
+
+    if (IS_IPv4) {
+        method = nm_setting_ip_config_get_method(s_ip);
+        if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+            nm_l3_config_data_set_connection_method(self, NM_CONNECTION_CONFIG_METHOD_AUTO);
+        } else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+            nm_l3_config_data_set_connection_method(self, NM_CONNECTION_CONFIG_METHOD_MANUAL);
+        } else {
+            nm_l3_config_data_set_connection_method(self, NM_CONNECTION_CONFIG_METHOD_NONE);
+        }
+    } else {
+        method = nm_setting_ip_config_get_method(s_ip);
+        if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+            nm_l3_config_data_set_connection_method(self, NM_CONNECTION_CONFIG_METHOD_AUTO);
+        } else if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+            nm_l3_config_data_set_connection_method(self, NM_CONNECTION_CONFIG_METHOD_MANUAL);
+        } else {
+            nm_l3_config_data_set_connection_method(self, NM_CONNECTION_CONFIG_METHOD_NONE);
+        }
+    }
 
     nm_l3_config_data_set_never_default(self, addr_family, !!never_default);
 

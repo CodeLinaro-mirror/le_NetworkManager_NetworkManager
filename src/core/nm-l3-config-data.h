@@ -16,6 +16,12 @@ typedef enum {
 } NMProxyConfigMethod;
 
 typedef enum {
+    NM_CONNECTION_CONFIG_METHOD_NONE,
+    NM_CONNECTION_CONFIG_METHOD_AUTO,
+    NM_CONNECTION_CONFIG_METHOD_MANUAL,
+} NMConnectionConfigMethod;
+
+typedef enum {
     NM_L3_CONFIG_DAT_FLAGS_NONE = 0,
 
     /* if set, then the merge flag NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES gets
@@ -553,6 +559,11 @@ NMSettingIP6ConfigPrivacy nm_l3_config_data_get_ip6_privacy(const NML3ConfigData
 
 gboolean nm_l3_config_data_set_ip6_privacy(NML3ConfigData           *self,
                                            NMSettingIP6ConfigPrivacy ip6_privacy);
+
+NMConnectionConfigMethod nm_l3_config_data_get_connection_method(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_connection_method(NML3ConfigData          *self,
+                                                 NMConnectionConfigMethod value);
 
 NMProxyConfigMethod nm_l3_config_data_get_proxy_method(const NML3ConfigData *self);
 
