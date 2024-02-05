@@ -811,6 +811,12 @@ struct _NMSettInfoProperty {
      * the direct location. */
     guint16 direct_offset;
 
+    /* We implement %NM_VALUE_TYPE_ENUM properties as integer GObject properties
+     * because using real enum triggers glib assertions when passing newer values to
+     * clients with old libnm. This defines the enum type that the direct_property of
+     * type %NM_VALUE_TYPE_ENUM will use. */
+    GType direct_enum_gtype;
+
     /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
      * normalize the string via g_ascii_strdown(). */
     bool direct_set_string_ascii_strdown : 1;
