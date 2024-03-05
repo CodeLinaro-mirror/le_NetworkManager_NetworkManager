@@ -298,6 +298,11 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
         delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
         if (delegation->device == device)
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
+        else {
+            int ifindex = nm_device_get_ifindex(device);
+
+            g_hash_table_remove(delegation->subnets, GINT_TO_POINTER(ifindex));
+        }
     }
 }
 
