@@ -75,15 +75,8 @@ abs_path() {
     exit 0
 }
 
-get_version() {
-    local major minor micro
-    local F="${1:-"$GITDIR/configure.ac"}"
-
-    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
-    eval "$vars"
-
-    [[ -n "$major" && -n "$minor" && "$micro" ]] || return 1
-    echo "$major.$minor.$micro"
+get_version() {.
+    grep -E -m1 '^\s+version:' "$GITDIR/meson.build" | cut -d"'" -f2
 }
 
 write_changelog() {
