@@ -11,6 +11,7 @@ fedora:
 - version: 41
   support: yes
   nm: 1.50
+  tier1-default: yes
 - version: 40
   support: 2025-05-13
   nm: 1.46
