@@ -1960,7 +1960,7 @@ find_device_by_iface(NMManager    *self,
 }
 
 static gboolean
-manager_sleeping(NMManager *self)
+manager_is_disabled(NMManager *self)
 {
     NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
 
@@ -1975,6 +1975,8 @@ _nm_state_to_string(NMState state)
     switch (state) {
     case NM_STATE_ASLEEP:
         return "ASLEEP";
+    case NM_STATE_NETWORKING_OFF:
+        return "NETWORKING_OFF";
     case NM_STATE_DISCONNECTED:
         return "DISCONNECTED";
     case NM_STATE_DISCONNECTING:
@@ -2083,8 +2085,8 @@ nm_manager_update_state(NMManager *self)
 
     priv = NM_MANAGER_GET_PRIVATE(self);
 
-    if (manager_sleeping(self))
-        new_state = NM_STATE_ASLEEP;
+    if (manager_is_disabled(self))
+        new_state = priv->sleeping ? NM_STATE_ASLEEP : NM_STATE_NETWORKING_OFF;
     else
         new_state = find_best_device_state(self);
 
@@ -2956,7 +2958,7 @@ _rfkill_update_devices(NMManager *self, NMRfkillType rtype, gboolean enabled)
     _notify(self, _rfkill_type_desc[rtype].prop_id);
 
     /* Don't touch devices if asleep/networking disabled */
-    if (manager_sleeping(self))
+    if (manager_is_disabled(self))
         return;
 
     /* enable/disable wireless devices as required */
@@ -3120,7 +3122,7 @@ _rfkill_update_from_user(NMManager *self, NMRfkillType rtype, gboolean enabled)
     gboolean          old_enabled, new_enabled;
 
     /* Don't touch devices if asleep/networking disabled */
-    if (manager_sleeping(self))
+    if (manager_is_disabled(self))
         return;
 
     _LOGD(LOGD_RFKILL,
@@ -4079,7 +4081,7 @@ add_device(NMManager *self, NMDevice *device, GError **error)
 
     nm_device_set_unmanaged_by_user_settings(device, TRUE);
 
-    nm_device_set_unmanaged_flags(device, NM_UNMANAGED_SLEEPING, manager_sleeping(self));
+    nm_device_set_unmanaged_flags(device, NM_UNMANAGED_SLEEPING, manager_is_disabled(self));
 
     dbus_path = nm_dbus_object_export(NM_DBUS_OBJECT(device));
     _LOG2I(LOGD_DEVICE, device, "new %s device (%s)", type_desc, dbus_path);
@@ -7352,8 +7354,10 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
     suspending          = sleeping_changed && priv->sleeping;
     waking_from_suspend = sleeping_changed && !priv->sleeping;
 
-    if (manager_sleeping(self)) {
-        _LOGD(LOGD_SUSPEND, "sleep: %s...", suspending ? "sleeping" : "disabling");
+    if (manager_is_disabled(self)) {
+        _LOGD(suspending ? LOGD_SUSPEND : LOGD_CORE,
+              "%s...",
+              suspending ? "sleep: sleeping" : "networking: disabling");
 
         /* FIXME: are there still hardware devices that need to be disabled around
          * suspend/resume?
@@ -7379,7 +7383,9 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             _handle_device_takedown(self, device, suspending, FALSE);
         }
     } else {
-        _LOGD(LOGD_SUSPEND, "sleep: %s...", waking_from_suspend ? "waking up" : "re-enabling");
+        _LOGD(waking_from_suspend ? LOGD_SUSPEND : LOGD_CORE,
+              "%s...",
+              waking_from_suspend ? "sleep: waking up" : "networking: re-enabling");
 
         sleep_devices_clear(self);
 

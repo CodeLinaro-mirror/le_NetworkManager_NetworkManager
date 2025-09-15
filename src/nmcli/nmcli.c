@@ -64,6 +64,7 @@
                 [NM_META_COLOR_PERMISSION_NO]            = "31",   \
                 [NM_META_COLOR_PERMISSION_YES]           = "32",   \
                 [NM_META_COLOR_STATE_ASLEEP]             = "31",   \
+                [NM_META_COLOR_STATE_NETWORKING_OFF]     = "31",   \
                 [NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "32",   \
                 [NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "32",   \
                 [NM_META_COLOR_STATE_CONNECTED_SITE]     = "32",   \
@@ -582,6 +583,7 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"permission-yes", NM_META_COLOR_PERMISSION_YES},
     {"prompt", NM_META_COLOR_PROMPT},
     {"state-asleep", NM_META_COLOR_STATE_ASLEEP},
+    {"state-networking-off", NM_META_COLOR_STATE_NETWORKING_OFF},
     {"state-connected-global", NM_META_COLOR_STATE_CONNECTED_GLOBAL},
     {"state-connected-local", NM_META_COLOR_STATE_CONNECTED_LOCAL},
     {"state-connected-site", NM_META_COLOR_STATE_CONNECTED_SITE},

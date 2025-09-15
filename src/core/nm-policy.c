@@ -1845,7 +1845,7 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     priv = NM_POLICY_GET_PRIVATE(self);
 
-    if (nm_manager_get_state(priv->manager) == NM_STATE_ASLEEP)
+    if (NM_IN_SET(nm_manager_get_state(priv->manager), NM_STATE_ASLEEP, NM_STATE_NETWORKING_OFF))
         return;
 
     if (!nm_device_autoconnect_allowed(device))
