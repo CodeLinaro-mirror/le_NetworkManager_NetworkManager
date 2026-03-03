@@ -2088,6 +2088,7 @@ _match_section_infos_construct(GKeyFile *keyfile, gboolean is_device)
                     NULL,
                     NULL,
                     "Invalid [.intern.*] section 'connection' or 'device' found");
+            g_free(groups[i]);
             continue;
         } else if (g_str_has_prefix(groups[i], prefix)) {
             groups[j++] = groups[i];
