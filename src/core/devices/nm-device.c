@@ -14962,6 +14962,8 @@ set_managed(NMDevice *self, NMDeviceManaged managed, NMDeviceManagedFlags flags,
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     NMTernary        managed_to_disk, old = NM_TERNARY_DEFAULT;
 
+    nm_assert(
+        NM_IN_SET(managed, NM_DEVICE_MANAGED_NO, NM_DEVICE_MANAGED_YES, NM_DEVICE_MANAGED_RESET));
     nm_assert((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) == 0);
 
     if (!NM_FLAGS_ANY(flags, NM_DEVICE_MANAGED_FLAGS_PERMANENT | NM_DEVICE_MANAGED_FLAGS_RUNTIME)) {
@@ -15037,11 +15039,20 @@ set_managed_cb(NMDevice              *self,
     flags   = set_managed_data->managed_flags;
     nm_g_slice_free(set_managed_data);
 
-    if (!error && (flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) != 0) {
-        g_set_error_literal(&error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_ARGUMENT,
-                            "Invalid flags");
+    if (!error) {
+        if (!NM_IN_SET(managed,
+                       NM_DEVICE_MANAGED_NO,
+                       NM_DEVICE_MANAGED_YES,
+                       NM_DEVICE_MANAGED_RESET))
+            g_set_error_literal(&error,
+                                NM_DEVICE_ERROR,
+                                NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                                "Invalid managed value");
+        else if ((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) != 0)
+            g_set_error_literal(&error,
+                                NM_DEVICE_ERROR,
+                                NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                                "Invalid flags");
     }
 
     if (error) {

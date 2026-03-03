@@ -396,7 +396,7 @@
 
     <!--
         SetManaged:
-        @managed:(<link linkend="NMDeviceState">NMDeviceManaged</link>) Whether the device is managed. Possible values are "no" (0), "yes" (1) and "reset" (2).
+        @managed:(<link linkend="NMDeviceManaged">NMDeviceManaged</link>) Whether the device is managed. Possible values are "no" (0), "yes" (1) and "reset" (2).
         @flags: (<link linkend="NMDeviceManagedFlags">NMDeviceManagedFlags</link>) flags.
         @since: 1.58
 
