@@ -48,6 +48,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   and only prompt for new secrets during the last authentication attempt before
   failing.
 * Add support for GENEVE interface.
+* Allow to make the changes to the managed state persistent across reboots from
+  nmcli and the D-Bus API.
+* Allow to change the device's administrative state in the kernel at the same
+  time than a change to the managed state from nmcli and the D-Bus API.
 
 =============================================
 NetworkManager-1.56
