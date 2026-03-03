@@ -14946,6 +14946,8 @@ typedef struct {
 static gboolean
 set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError **error)
 {
+    nm_assert((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) == 0);
+
     g_object_set(self, NM_DEVICE_MANAGED, managed, NULL);
 
     return TRUE;
@@ -14966,6 +14968,13 @@ set_managed_cb(NMDevice              *self,
     managed = set_managed_data->managed_state;
     flags   = set_managed_data->managed_flags;
     nm_g_slice_free(set_managed_data);
+
+    if (!error && (flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) != 0) {
+        g_set_error_literal(&error,
+                            NM_DEVICE_ERROR,
+                            NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                            "Invalid flags");
+    }
 
     if (error) {
         nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_MANAGED,

@@ -1259,6 +1259,8 @@ typedef enum /*< flags >*/ {
  */
 typedef enum /*< flags >*/ {
     NM_DEVICE_MANAGED_FLAGS_NONE = 0,
+
+    NM_DEVICE_MANAGED_FLAGS_ALL = 0, /* <skip> */
 } NMDeviceManagedFlags;
 
 /**
