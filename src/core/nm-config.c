@@ -2115,36 +2115,42 @@ nm_config_get_device_managed(NMConfig *self, NMDevice *device, NMTernary *out, G
     const char      *ifname        = nm_device_get_iface(device);
     const char      *hwaddr        = nm_device_get_permanent_hw_address(device);
     char             mac_group_name[NM_UTILS_HWADDR_LEN_MAX * 3 + 1];
-    NMTernary        val_by_name, val_by_mac;
+    NMTernary        val_by_name, val_by_mac = NM_TERNARY_DEFAULT;
 
     g_return_val_if_fail(NM_IS_CONFIG(self), FALSE);
     g_return_val_if_fail(NM_CONFIG_GET_PRIVATE(self)->config_data, FALSE);
     g_return_val_if_fail(out, FALSE);
-    g_return_val_if_fail(ifname && hwaddr, FALSE);
-
-    if (!normalize_hwaddr_for_group_name(hwaddr, mac_group_name, error))
-        return FALSE;
+    g_return_val_if_fail(ifname, FALSE);
 
     priv    = NM_CONFIG_GET_PRIVATE(self);
     keyfile = _nm_config_data_get_keyfile_intern(priv->config_data);
-    group_by_name =
-        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
-    group_by_mac =
-        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", mac_group_name);
 
     if (!keyfile) {
         *out = NM_TERNARY_DEFAULT;
         return TRUE;
     }
 
+    group_by_name =
+        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
+
     val_by_name = (NMTernary) nm_config_keyfile_get_boolean(keyfile,
                                                             group_by_name,
                                                             NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
                                                             NM_TERNARY_DEFAULT);
-    val_by_mac  = (NMTernary) nm_config_keyfile_get_boolean(keyfile,
-                                                           group_by_mac,
-                                                           NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                           NM_TERNARY_DEFAULT);
+
+    /* Devices without a kernel link (i.e. OVS ports) don't have a MAC address */
+    if (hwaddr) {
+        if (!normalize_hwaddr_for_group_name(hwaddr, mac_group_name, error))
+            return FALSE;
+
+        group_by_mac = g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s",
+                                       mac_group_name);
+
+        val_by_mac = (NMTernary) nm_config_keyfile_get_boolean(keyfile,
+                                                               group_by_mac,
+                                                               NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                               NM_TERNARY_DEFAULT);
+    }
 
     if (val_by_name != NM_TERNARY_DEFAULT && val_by_mac == NM_TERNARY_DEFAULT) {
         *out = val_by_name;
@@ -2205,25 +2211,39 @@ nm_config_set_device_managed(NMConfig *self,
 
     g_return_val_if_fail(NM_IS_CONFIG(self), FALSE);
     g_return_val_if_fail(NM_CONFIG_GET_PRIVATE(self)->config_data, FALSE);
-    g_return_val_if_fail(ifname && hwaddr, FALSE);
+    g_return_val_if_fail(ifname, FALSE);
 
-    if (!normalize_hwaddr_for_group_name(hwaddr, mac_group_name, error))
+    if (by_mac && !hwaddr) {
+        g_set_error(error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_ARGUMENT,
+                    "the device has no MAC address, but match by MAC was requested");
+        return FALSE;
+    }
+
+    if (hwaddr && !normalize_hwaddr_for_group_name(hwaddr, mac_group_name, error))
         return FALSE;
 
     priv    = NM_CONFIG_GET_PRIVATE(self);
     keyfile = nm_config_data_clone_keyfile_intern(priv->config_data);
-    group_by_name =
-        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
-    group_by_mac =
-        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", mac_group_name);
 
     /* Remove existing configs. Search them by group name [.intern.device-manage-*]. In
      * the intern file, 'device-manage' sections are only used for this purpose, so we
      * won't remove any other device's config. */
+    group_by_name =
+        g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s", ifname);
+
     if (g_key_file_remove_group(keyfile, group_by_name, NULL))
         changed = TRUE;
-    if (g_key_file_remove_group(keyfile, group_by_mac, NULL))
-        changed = TRUE;
+
+    /* Devices without a kernel link (i.e. OVS ports) don't have a MAC address */
+    if (hwaddr) {
+        group_by_mac = g_strdup_printf(NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_DEVICE "-manage-%s",
+                                       mac_group_name);
+
+        if (g_key_file_remove_group(keyfile, group_by_mac, NULL))
+            changed = TRUE;
+    }
 
     /* If the new state is not explicitly TRUE of FALSE, we only remove the configs */
     if (managed == NM_TERNARY_DEFAULT)
