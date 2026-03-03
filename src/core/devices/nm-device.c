@@ -14960,7 +14960,7 @@ static gboolean
 set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError **error)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMTernary        old;
+    NMTernary        old  = NM_TERNARY_DEFAULT;
 
     nm_assert((flags & ~NM_DEVICE_MANAGED_FLAGS_ALL) == 0);
 
@@ -14973,8 +14973,7 @@ set_managed(NMDevice *self, gboolean managed, NMDeviceManagedFlags flags, GError
     }
 
     if (flags & NM_DEVICE_MANAGED_FLAGS_PERMANENT) {
-        if (!nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, error))
-            return FALSE;
+        nm_config_get_device_managed(nm_manager_get_config(priv->manager), self, &old, error);
 
         if (!nm_config_set_device_managed(nm_manager_get_config(priv->manager),
                                           self,
