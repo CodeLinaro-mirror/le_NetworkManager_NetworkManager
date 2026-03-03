@@ -3026,7 +3026,7 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
             cb_info->nmc = nmc;
             if (nmc->timeout > 0)
                 cb_info->timeout_source =
-                    nm_g_timeout_add_source(nmc->timeout, device_set_timeout_cb, cb_info);
+                    nm_g_timeout_add_seconds_source(nmc->timeout, device_set_timeout_cb, cb_info);
 
             nmc->nowait_flag = (nmc->timeout == 0);
             nmc->should_wait++;
