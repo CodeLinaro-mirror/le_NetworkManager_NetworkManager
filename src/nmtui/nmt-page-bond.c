@@ -49,6 +49,7 @@ typedef struct {
     NmtNewtEntry   *downdelay;
     NmtNewtEntry   *arp_interval;
     NmtAddressList *arp_ip_target;
+    NmtAddressList *other_options;
 
     NmtPageBondMonitoringMode monitoring_mode;
 
@@ -60,6 +61,45 @@ typedef struct {
 /*****************************************************************************/
 
 static void arp_ip_target_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data);
+
+/*****************************************************************************/
+
+static gboolean
+_is_managed_option(const char *option)
+{
+    return NM_IN_STRSET(option,
+                        NM_SETTING_BOND_OPTION_MODE,
+                        NM_SETTING_BOND_OPTION_PRIMARY,
+                        NM_SETTING_BOND_OPTION_MIIMON,
+                        NM_SETTING_BOND_OPTION_UPDELAY,
+                        NM_SETTING_BOND_OPTION_DOWNDELAY,
+                        NM_SETTING_BOND_OPTION_ARP_INTERVAL,
+                        NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+}
+
+static void
+_bond_update_other_options(NMSettingBond *s_bond, NmtAddressList *list)
+{
+    gs_unref_ptrarray GPtrArray *arr      = g_ptr_array_new_with_free_func(g_free);
+    guint                        num_opts = nm_setting_bond_get_num_options(s_bond);
+    guint                        i;
+
+    for (i = 0; i < num_opts; i++) {
+        const char *opt_name;
+        const char *opt_value;
+
+        if (!nm_setting_bond_get_option(s_bond, i, &opt_name, &opt_value)) {
+            continue;
+        }
+
+        if (!_is_managed_option(opt_name)) {
+            g_ptr_array_add(arr, g_strdup_printf("%s=%s", opt_name, opt_value));
+        }
+    }
+
+    g_ptr_array_add(arr, NULL);
+    g_object_set(G_OBJECT(list), "strings", arr->pdata, NULL);
+}
 
 /*****************************************************************************/
 
@@ -154,6 +194,8 @@ bond_options_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
     nmt_newt_widget_set_visible(NMT_NEWT_WIDGET(priv->downdelay), visible_mii);
     nmt_newt_widget_set_visible(NMT_NEWT_WIDGET(priv->arp_interval), !visible_mii);
     nmt_newt_widget_set_visible(NMT_NEWT_WIDGET(priv->arp_ip_target), !visible_mii);
+
+    _bond_update_other_options(s_bond, priv->other_options);
 
     priv->updating = FALSE;
 }
@@ -308,6 +350,49 @@ arp_ip_target_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_d
     g_strfreev(ips);
 }
 
+static void
+other_options_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+    NmtPageBond        *bond    = NMT_PAGE_BOND(user_data);
+    NmtPageBondPrivate *priv    = NMT_PAGE_BOND_GET_PRIVATE(bond);
+    gs_strfreev char  **strings = NULL;
+    const char         *name;
+    guint               num;
+    guint               i;
+
+    if (priv->updating)
+        return;
+
+    priv->updating = TRUE;
+
+    g_object_get(G_OBJECT(priv->other_options), "strings", &strings, NULL);
+
+again:
+    num = nm_setting_bond_get_num_options(priv->s_bond);
+    for (i = 0; i < num; i++) {
+        if (!nm_setting_bond_get_option(priv->s_bond, i, &name, NULL)) {
+            continue;
+        }
+
+        if (!_is_managed_option(name)) {
+            nm_setting_bond_remove_option(priv->s_bond, name);
+            goto again;
+        }
+    }
+
+    for (i = 0; strings && strings[i]; i++) {
+        char *val = strchr(strings[i], '=');
+
+        if (val && val != strings[i] && val[1]) {
+            *val = '\0';
+            if (!_is_managed_option(strings[i]))
+                nm_setting_bond_add_option(priv->s_bond, strings[i], val + 1);
+        }
+    }
+
+    priv->updating = FALSE;
+}
+
 static gboolean
 bond_connection_type_filter(GType connection_type, gpointer user_data)
 {
@@ -394,6 +479,11 @@ nmt_page_bond_constructed(GObject *object)
     g_signal_connect(widget, "notify::strings", G_CALLBACK(arp_ip_target_widget_changed), bond);
     nmt_editor_grid_append(grid, _("ARP targets"), widget, NULL);
     priv->arp_ip_target = NMT_ADDRESS_LIST(widget);
+
+    widget = nmt_address_list_new(NMT_ADDRESS_LIST_KEY_VALUE);
+    g_signal_connect(widget, "notify::strings", G_CALLBACK(other_options_widget_changed), bond);
+    nmt_editor_grid_append(grid, _("Other options (key=value)"), widget, NULL);
+    priv->other_options = NMT_ADDRESS_LIST(widget);
 
     widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED_ETHERNET);
     g_object_bind_property(s_wired,
