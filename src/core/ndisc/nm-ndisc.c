@@ -768,7 +768,7 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec
         return FALSE;
     }
 
-    g_array_insert_val(rdata->routes, insert_idx == G_MAXUINT ? 0u : insert_idx, *new_item);
+    g_array_insert_val(rdata->routes, insert_idx == G_MAXUINT ? rdata->routes->len : insert_idx, *new_item);
     return TRUE;
 }
 
